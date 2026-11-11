@@ -1,0 +1,24 @@
+# Generated Vivado projects (rebuild with each folder's create_project.tcl)
+**/vivado/
+
+# Vivado / XSim build output and logs
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.gen/
+.Xil/
+xsim.dir/
+*.jou
+*.log
+*.str
+*.wdb
+*.pb
+*.backup.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
