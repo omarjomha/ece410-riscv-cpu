@@ -17,18 +17,18 @@ USE IEEE.NUMERIC_STD.ALL;
 ENTITY lw_sw_datapath IS
     PORT (
         clock       : IN STD_LOGIC;
-        <dp_13>     : IN STD_LOGIC;
-        <dp_10>     : IN STD_LOGIC;
-        <dp_11>     : IN STD_LOGIC;
-        <dp_14>     : IN STD_LOGIC;
-        <dp_15>     : IN STD_LOGIC;
-        <dp_8>      : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
-        <dp_12>     : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
-        <dp_1>      : OUT STD_LOGIC_VECTOR(6 DOWNTO 0);
-        <dp_2>      : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
-        <dp_3>      : OUT STD_LOGIC;
+        write_en    : IN STD_LOGIC;
+        rd_we       : IN STD_LOGIC;
+        alu_sel     : IN STD_LOGIC;
+        res_sel     : IN STD_LOGIC;
+        out_en      : IN STD_LOGIC;
+        imm_sel     : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+        alu_ctrl    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+        opcode      : OUT STD_LOGIC_VECTOR(6 DOWNTO 0);
+        funct3      : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+        funct7_bit5 : OUT STD_LOGIC;
         zero_flag   : OUT STD_LOGIC;
-        out_data   : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
+        out_data    : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
     );
 END ENTITY;
 
@@ -41,14 +41,14 @@ ARCHITECTURE structural OF lw_sw_datapath IS
     SIGNAL alu_mux_o                        : STD_LOGIC_VECTOR(31 DOWNTO 0) := (OTHERS => '0');
 
 BEGIN
-    <dp_1>   <= instruction(6 DOWNTO 0);
-    <dp_2>   <= instruction(14 DOWNTO 12);
-    <dp_3>   <= instruction(30);
+    opcode      <= instruction(6 DOWNTO 0);
+    funct3      <= instruction(14 DOWNTO 12);
+    funct7_bit5 <= instruction(30);
 
 ------------------------------------------------------------------------
 -- FETCH BLOCK
 ------------------------------------------------------------------------
-    dp_pc_adder : ENTITY work.adder_32(structural)
+    dp_pc_adder : ENTITY work.adder_32(Behavioral)
         PORT MAP(
             op_a => pc,
             op_b => x"00000004",
@@ -74,19 +74,25 @@ BEGIN
     dp_regfile : ENTITY work.register_file(behavioral)
         PORT MAP(
             clock    => clock,
-            rs1_addr => <dp_4>,
-            rs2_addr => <dp_5>,
-            rd_addr  => <dp_6>,
+            rs1_addr => instruction(19 downto 15),
+            rs2_addr => instruction(24 downto 20),
+            rd_addr  => instruction(11 downto 7),
             rd_data  => result_mux_o,
             rs1_data => rs1_data,
             rs2_data => rs2_data,
-            rd_we    => <dp_10>
+            rd_we    => rd_we
         );
 
     -- TODO: Instantiate your immediate extension unit here.
     --       Connect it to the <dp_7> 'instruction[31:7]' input,
     --       the <dp_8> 'imm_sel' control signal, and drive
     --       the <dp_9> 'imm_ext' output.
+    dp_extunit : ENTITY work.extension_unit
+        PORT MAP(
+            din  => instruction(31 downto 7),
+            ctrl => imm_sel,
+            dout => imm_ext
+        );
 
 ------------------------------------------------------------------------
 -- EXECUTE & MEMORY BLOCK
@@ -96,14 +102,14 @@ BEGIN
             in0   => rs2_data,
             in1   => imm_ext,
             out_y => alu_mux_o,
-            sel   => <dp_11>
+            sel   => alu_sel
         );
 
     dp_alu : ENTITY work.alu(behavioral)
         PORT MAP(
             src_a     => rs1_data,
             src_b     => alu_mux_o,
-            alu_ctrl  => <dp_12>,
+            alu_ctrl  => alu_ctrl,
             result    => alu_result,
             zero_flag => zero_flag
         );
@@ -114,7 +120,7 @@ BEGIN
             address    => alu_result,
             write_data => rs2_data,
             data       => rd_data,
-            write_en   => <dp_13>
+            write_en   => write_en
         );
 
 ------------------------------------------------------------------------
@@ -125,12 +131,12 @@ BEGIN
             in0   => alu_result,
             in1   => rd_data,
             out_y => result_mux_o,
-            sel   => <dp_14>
+            sel   => res_sel
         );
 
     dp_tri_state_buffer: ENTITY work.tri_state_buffer(Behavioral)
         PORT MAP(
-            output_en => <dp_15>,
+            output_en => out_en,
             buffer_input => result_mux_o,
             buffer_output=> out_data
         );
