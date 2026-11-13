@@ -26,7 +26,7 @@ ece410-riscv-cpu/
 
 ## Building the Vivado project
 
-Vivado project files are generated, not committed. Tested with **Vivado 2024.1**, target part `xc7z010clg400-1`.
+Vivado project files are generated, not committed. Tested with **Vivado 2024.2** (the version used in the ECE 410 lab), target part `xc7z010clg400-1`.
 
 1. Clone the repo.
 2. Open Vivado, then in the Tcl Console run:
