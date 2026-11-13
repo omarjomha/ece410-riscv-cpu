@@ -17,17 +17,17 @@ USE IEEE.NUMERIC_STD.ALL;
 
 ENTITY controller IS
     PORT (
-        <dp_1>    : IN STD_LOGIC_VECTOR(6 DOWNTO 0);
-        <dp_2>    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
-        <dp_3>    : IN STD_LOGIC;
+        op_code    : IN STD_LOGIC_VECTOR(6 DOWNTO 0);
+        funct3    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+        funct7_bit5    : IN STD_LOGIC;
         zero_flag : IN STD_LOGIC;
-        <dp_11>   : OUT STD_LOGIC;
-        <dp_14>   : OUT STD_LOGIC;
-        <dp_13>   : OUT STD_LOGIC;
-        <dp_10>   : OUT STD_LOGIC;
-        <dp_15>   : OUT STD_LOGIC;
-        <dp_8>    : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
-        <dp_12>   : OUT STD_LOGIC_VECTOR(2 DOWNTO 0)
+        alu_sel   : OUT STD_LOGIC;
+        res_sel   : OUT STD_LOGIC;
+        write_en   : OUT STD_LOGIC;
+        rd_we   : OUT STD_LOGIC;
+        out_en   : OUT STD_LOGIC;
+        imm_sel    : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+        alu_ctrl   : OUT STD_LOGIC_VECTOR(2 DOWNTO 0)
     );
 END controller;
 
@@ -62,10 +62,10 @@ ARCHITECTURE Behavioral OF controller IS
     CONSTANT CTRL_NOP : STD_LOGIC_VECTOR(9 DOWNTO 0) := "0000000000";
 
 BEGIN
-    <dp_15> <= '1';
-    aux <= <dp_3> & <dp_2> & <dp_1>;
+    out_en <= '1';
+    aux <= funct7_bit5 & funct3 & op_code;
 
-    decode : PROCESS (<dp_1>, <dp_2>, <dp_3>)
+    decode : PROCESS (op_code, funct3, funct7_bit5)
     BEGIN
         controls <= CTRL_NOP; -- default assignment
 
@@ -77,7 +77,7 @@ BEGIN
                 instr <= SW;
                 controls <= CTRL_SW;
             WHEN OPCODE_ADD =>
-                IF <dp_2> = "000" AND <dp_3> = '0' THEN
+                IF funct3 = "000" AND funct7_bit5 = '0' THEN
                     instr <= ADD;
                     controls <= CTRL_ADD;
                 END IF;
@@ -88,11 +88,11 @@ BEGIN
     END PROCESS;
 
     -- controller output assignments
-    <dp_11> <= controls(9);
-    <dp_14> <= controls(8);
-    <dp_10> <= controls(7);
-    <dp_13> <= controls(6);
-    <dp_8>  <= controls(5 DOWNTO 3);
-    <dp_12> <= controls(2 DOWNTO 0);
+    alu_sel <= controls(9);
+    res_sel <= controls(8);
+    rd_we <= controls(7);
+    write_en <= controls(6);
+    imm_sel  <= controls(5 DOWNTO 3);
+    alu_ctrl <= controls(2 DOWNTO 0);
 
 END Behavioral;
